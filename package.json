@@ -2,7 +2,7 @@
   "name": "unifimoodledownloader",
   "description": "A simple scraper & downloader for Moodle resources",
   "version": "0.1.0",
-  "main": "index.js",
+  "main": "app.js",
   "author": "Niccolò Maggioni <nicco.maggioni@gmail.com>",
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
     "winston": "3.1.0"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node app.js"
   },
   "license": "MIT"
 }
