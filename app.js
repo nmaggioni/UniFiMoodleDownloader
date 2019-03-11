@@ -32,13 +32,19 @@ async function download(sessionCookie, course, section, filename, url) {
     encoding: null
   })
     .then(r => {
-      var urlExtension = r.request.uri.href.substring(r.request.uri.href.lastIndexOf('.') + 1);
+      let uriHref = removeParamsFromUrl(r.request.uri.href);
+      let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
       fse.writeFileSync(path.resolve(downloadPath, replaceAll(
         `${filename}.${urlExtension}`,
         path.sep, '_'
       )), r.body);
     })
     .catch(e => panic(e, false));
+}
+
+function removeParamsFromUrl(url) {
+  let urlParamIndex = url.indexOf('?');
+  return (urlParamIndex != -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
 }
 
 Config.load()
