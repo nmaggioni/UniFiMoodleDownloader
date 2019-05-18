@@ -53,7 +53,6 @@ Config.load()
       .then((secrets) => {
         scrape(secrets, config)
           .then((r) => {
-            //logger.silly(JSON.stringify(r.contents));
             for (const courseId in r.contents) {
               if (r.contents.hasOwnProperty(courseId)) {
                 logger.info(`Download del corso con ID: ${courseId}...`);
