@@ -44,7 +44,7 @@ async function download(sessionCookie, course, section, filename, url) {
 
 function removeParamsFromUrl(url) {
   let urlParamIndex = url.indexOf('?');
-  return (urlParamIndex != -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
+  return (urlParamIndex !== -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
 }
 
 Config.load()
@@ -67,10 +67,11 @@ Config.load()
 
                     for (const resourceName in section) {
                       if (section.hasOwnProperty(resourceName)) {
-                        let resourceUrl = section[resourceName];
+                        let filename = `${section[resourceName].prefix}. ${resourceName}`;
+                        let url = section[resourceName].url;
 
-                        logger.debug(`      └─ Download risorsa: "${resourceName}" @ "${resourceUrl}"...`);
-                        download(r.sessionCookie, courseName, sectionName, resourceName, resourceUrl);
+                        logger.debug(`      └─ Download risorsa: "${filename}" @ "${url}"...`);
+                        download(r.sessionCookie, courseName, sectionName, filename, url);
                       }
                     }
                   }
