@@ -9,11 +9,11 @@
     "url": "https://github.com/nmaggioni/UniFiMoodleDownloader.git"
   },
   "dependencies": {
-    "fs-extra": "7.0.1",
-    "puppeteer": "1.11.0",
+    "fs-extra": "8.1.0",
+    "puppeteer": "1.20.0",
     "request": "2.88.0",
-    "request-promise-native": "1.0.5",
-    "winston": "3.1.0"
+    "request-promise-native": "1.0.7",
+    "winston": "3.2.1"
   },
   "scripts": {
     "start": "node app.js"
