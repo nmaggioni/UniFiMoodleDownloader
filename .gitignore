@@ -125,5 +125,6 @@ typings/
 # End of https://www.gitignore.io/api/node,jetbrains+all
 
 secrets.local.json
+config.local.json
 downloads/
 downloads
