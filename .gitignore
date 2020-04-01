@@ -128,3 +128,4 @@ secrets.local.json
 config.local.json
 downloads/
 downloads
+aria2c_input.txt

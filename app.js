@@ -19,32 +19,69 @@ function replaceAll(str, find, replace) {
   return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 }
 
-async function download(sessionCookie, course, section, filename, url) {
+function removeParamsFromUrl(url) {
+  let urlParamIndex = url.indexOf('?');
+  return (urlParamIndex !== -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
+}
+
+async function prepareDownload(sessionCookie, course, section, filename, url) {
   const downloadPath = path.resolve(__dirname, 'downloads', course, section);
   fse.mkdirpSync(downloadPath);
-  logger.silly(`Download file in: ${downloadPath}`);
+
+  let r;
+  try {
+    r = await request.get({
+      url: url,
+      headers: {
+        "cookie": `MoodleSession=${sessionCookie};`,
+      },
+      resolveWithFullResponse: true,
+      encoding: null,
+      timeout: 30000,
+    });
+  } catch (err) {
+    logger.error("Error in preflight filename extension extraction", err);
+    return;
+  }
+  let uriHref = removeParamsFromUrl(r.request.uri.href);
+  let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
+
+  return {
+    sessionCookie,
+    url,
+    filename: replaceAll(`${filename}.${urlExtension}`, path.sep, '_'),
+    path: downloadPath,
+  };
+}
+
+async function download(downloadMetadata) {
   await request.get({
-    url: url,
+    url: downloadMetadata.url,
     headers: {
-      "cookie": `MoodleSession=${sessionCookie};`,
+      "cookie": `MoodleSession=${downloadMetadata.sessionCookie};`,
     },
     resolveWithFullResponse: true,
-    encoding: null
+    encoding: null,
+    timeout: 30000,
   })
     .then(r => {
       let uriHref = removeParamsFromUrl(r.request.uri.href);
       let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
-      fse.writeFileSync(path.resolve(downloadPath, replaceAll(
-        `${filename}.${urlExtension}`,
+      fse.writeFileSync(path.resolve(downloadMetadata.path, replaceAll(
+        `${downloadMetadata.filename}.${urlExtension}`,
         path.sep, '_'
       )), r.body);
     })
     .catch(e => panic(e, false));
 }
 
-function removeParamsFromUrl(url) {
-  let urlParamIndex = url.indexOf('?');
-  return (urlParamIndex !== -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
+function aria2c(downloadMetadata) {
+  let inputFileBlockLines = [downloadMetadata.url];
+  inputFileBlockLines.push(`  header=Cookie:MoodleSession=${downloadMetadata.sessionCookie}`);
+  inputFileBlockLines.push(`  dir="${downloadMetadata.path}"`);
+  inputFileBlockLines.push(`  out="${downloadMetadata.filename}"`);
+  inputFileBlockLines.push("");
+  return inputFileBlockLines.join("\n");
 }
 
 Config.load()
@@ -52,7 +89,9 @@ Config.load()
     Secrets.load()
       .then((secrets) => {
         scrape(secrets, config)
-          .then((r) => {
+          .then(async (r) => {
+            const aria2cInputFileBlocks = [];
+
             for (const courseId in r.contents) {
               if (r.contents.hasOwnProperty(courseId)) {
                 logger.info(`Download del corso con ID: ${courseId}...`);
@@ -70,13 +109,30 @@ Config.load()
                         let filename = `${section[resourceName].prefix}. ${resourceName}`;
                         let url = section[resourceName].url;
 
-                        logger.debug(`      └─ Download risorsa: "${filename}" @ "${url}"...`);
-                        download(r.sessionCookie, courseName, sectionName, filename, url);
+                        logger.debug(`      └─ ${config.downloader === "aria2" ? "Preparazione download" : "Download"} risorsa: "${filename}" @ "${url}"...`);
+                        const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, sectionName, filename, url);
+                        if (downloadMetadata) {
+                          switch (config.downloader) {
+                            case "aria2":
+                              aria2cInputFileBlocks.push(aria2c(downloadMetadata));
+                              break;
+                            case "internal":
+                            default:
+                              logger.silly(`Download file in: ${downloadMetadata.path}`);
+                              await download(downloadMetadata);
+                              break;
+                          }
+                        }
                       }
                     }
                   }
                 }
               }
+            }
+
+            if (config.downloader === "aria2" && aria2cInputFileBlocks.length > 0) {
+              fse.writeFileSync(path.resolve(path.join(__dirname, "aria2c_input.txt")), aria2cInputFileBlocks.join('\n'));
+              logger.info("File di input per aria2c scritto in \"aria2c_input.txt\".");
             }
           })
           .catch(e => panic(e, false));
