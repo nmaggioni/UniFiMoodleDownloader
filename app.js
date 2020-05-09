@@ -133,6 +133,7 @@ Config.load()
             if (config.downloader === "aria2" && aria2cInputFileBlocks.length > 0) {
               fse.writeFileSync(path.resolve(path.join(__dirname, "aria2c_input.txt")), aria2cInputFileBlocks.join('\n'));
               logger.info("File di input per aria2c scritto in \"aria2c_input.txt\".");
+              logger.info("Esempio di comando di download: \"aria2c -x 16 -s 16 -c -i aria2c_input.txt\"");
             }
           })
           .catch(e => panic(e, false));
