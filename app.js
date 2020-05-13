@@ -45,11 +45,14 @@ async function prepareDownload(sessionCookie, course, section, filename, url) {
   }
   let uriHref = removeParamsFromUrl(r.request.uri.href);
   let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
+  if (!filename.endsWith(urlExtension)) {
+      filename = `${filename}.${urlExtension}`;
+  }
 
   return {
     sessionCookie,
     url,
-    filename: replaceAll(`${filename}.${urlExtension}`, path.sep, '_'),
+    filename: replaceAll(filename, path.sep, '_'),
     path: downloadPath,
   };
 }
@@ -65,12 +68,15 @@ async function download(downloadMetadata) {
     timeout: 30000,
   })
     .then(r => {
+      /*
       let uriHref = removeParamsFromUrl(r.request.uri.href);
       let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
       fse.writeFileSync(path.resolve(downloadMetadata.path, replaceAll(
         `${downloadMetadata.filename}.${urlExtension}`,
         path.sep, '_'
       )), r.body);
+      */
+      fse.writeFileSync(path.resolve(downloadMetadata.path, downloadMetadata.filename), r.body);
     })
     .catch(e => panic(e, false));
 }
@@ -118,7 +124,7 @@ Config.load()
                               break;
                             case "internal":
                             default:
-                              logger.silly(`Download file in: ${downloadMetadata.path}`);
+                              logger.silly(`Download file in: ${downloadMetadata.path}${path.sep}${downloadMetadata.filename}`);
                               await download(downloadMetadata);
                               break;
                           }
