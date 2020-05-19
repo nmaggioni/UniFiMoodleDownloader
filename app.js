@@ -45,6 +45,8 @@ async function prepareDownload(sessionCookie, course, section, filename, url) {
   }
   let uriHref = removeParamsFromUrl(r.request.uri.href);
   let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
+
+  filename = filename.trim();
   if (!filename.endsWith(urlExtension)) {
       filename = `${filename}.${urlExtension}`;
   }
@@ -58,6 +60,11 @@ async function prepareDownload(sessionCookie, course, section, filename, url) {
 }
 
 async function download(downloadMetadata) {
+  const downloadedFilePath = path.resolve(downloadMetadata.path, downloadMetadata.filename);
+  if (fse.pathExistsSync(downloadedFilePath)) {
+    return false;
+  }
+
   await request.get({
     url: downloadMetadata.url,
     headers: {
@@ -76,9 +83,11 @@ async function download(downloadMetadata) {
         path.sep, '_'
       )), r.body);
       */
-      fse.writeFileSync(path.resolve(downloadMetadata.path, downloadMetadata.filename), r.body);
+      fse.writeFileSync(downloadedFilePath, r.body);
     })
     .catch(e => panic(e, false));
+
+    return true;
 }
 
 function aria2c(downloadMetadata) {
@@ -125,7 +134,10 @@ Config.load()
                             case "internal":
                             default:
                               logger.silly(`Download file in: ${downloadMetadata.path}${path.sep}${downloadMetadata.filename}`);
-                              await download(downloadMetadata);
+                              const wasDownloaded = await download(downloadMetadata);
+                              if (!wasDownloaded) {
+                                logger.silly(`Download skipped! File exists or an error has been handled.`);
+                              }
                               break;
                           }
                         }
