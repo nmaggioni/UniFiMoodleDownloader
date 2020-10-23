@@ -93,8 +93,8 @@ async function download(downloadMetadata) {
 function aria2c(downloadMetadata) {
   let inputFileBlockLines = [downloadMetadata.url];
   inputFileBlockLines.push(`  header=Cookie:MoodleSession=${downloadMetadata.sessionCookie}`);
-  inputFileBlockLines.push(`  dir="${downloadMetadata.path}"`);
-  inputFileBlockLines.push(`  out="${downloadMetadata.filename}"`);
+  inputFileBlockLines.push(`  dir=${downloadMetadata.path}`);
+  inputFileBlockLines.push(`  out=${downloadMetadata.filename}`);
   inputFileBlockLines.push("");
   return inputFileBlockLines.join("\n");
 }
