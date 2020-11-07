@@ -106,17 +106,18 @@ Config.load()
         scrape(secrets, config)
           .then(async (r) => {
             const aria2cInputFileBlocks = [];
+            const downloadLogPrefix = config.downloader !== "internal" ? "Preparazione download" : "Download";
 
             for (const courseId in r.contents) {
               if (r.contents.hasOwnProperty(courseId)) {
-                logger.info(`Download del corso con ID: ${courseId}...`);
+                logger.info(`${downloadLogPrefix} del corso con ID: ${courseId}...`);
                 let course = r.contents[courseId];
                 let courseName = course.courseName;
-                logger.debug(`└─ Download corso: "${courseName}"...`);
+                logger.debug(`└─ ${downloadLogPrefix} corso: "${courseName}"...`);
 
                 for (const sectionName in course.sections) {
                   if (course.sections.hasOwnProperty(sectionName)) {
-                    logger.debug(`   └─ Download sezione: "${sectionName}"...`);
+                    logger.debug(`   └─ ${downloadLogPrefix} sezione: "${sectionName}"...`);
                     let section = course.sections[sectionName];
 
                     for (const resourceName in section) {
@@ -124,7 +125,7 @@ Config.load()
                         let filename = `${section[resourceName].prefix}. ${resourceName}`;
                         let url = section[resourceName].url;
 
-                        logger.debug(`      └─ ${config.downloader === "aria2" ? "Preparazione download" : "Download"} risorsa: "${filename}" @ "${url}"...`);
+                        logger.debug(`      └─ ${downloadLogPrefix} risorsa: "${filename}" @ "${url}"...`);
                         const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, sectionName, filename, url);
                         if (downloadMetadata) {
                           switch (config.downloader) {
