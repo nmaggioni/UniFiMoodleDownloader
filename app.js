@@ -105,6 +105,7 @@ Config.load()
       .then((secrets) => {
         scrape(secrets, config)
           .then(async (r) => {
+            const toBeDownloaded = [];
             const aria2cInputFileBlocks = [];
             const downloadLogPrefix = config.downloader !== "internal" ? "Preparazione download" : "Download";
 
@@ -118,30 +119,55 @@ Config.load()
                 for (const sectionName in course.sections) {
                   if (course.sections.hasOwnProperty(sectionName)) {
                     logger.debug(`   └─ ${downloadLogPrefix} sezione: "${sectionName}"...`);
-                    let section = course.sections[sectionName];
+                    const sectionFiles = course.sections[sectionName].files;
+                    const sectionFolders = course.sections[sectionName].folders;
 
-                    for (const resourceName in section) {
-                      if (section.hasOwnProperty(resourceName)) {
-                        let filename = `${section[resourceName].prefix}. ${resourceName}`;
-                        let url = section[resourceName].url;
+                    for (const resourceName in sectionFiles) {
+                      if (sectionFiles.hasOwnProperty(resourceName)) {
+                        let filename = `${sectionFiles[resourceName].prefix}. ${resourceName}`;
+                        let url = sectionFiles[resourceName].url;
+                        logger.debug(`      └─ Analisi risorsa: "${filename}" @ "${url}"...`);
 
-                        logger.debug(`      └─ ${downloadLogPrefix} risorsa: "${filename}" @ "${url}"...`);
                         const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, sectionName, filename, url);
                         if (downloadMetadata) {
-                          switch (config.downloader) {
-                            case "aria2":
-                              aria2cInputFileBlocks.push(aria2c(downloadMetadata));
-                              break;
-                            case "internal":
-                            default:
-                              logger.silly(`Download file in: ${downloadMetadata.path}${path.sep}${downloadMetadata.filename}`);
-                              const wasDownloaded = await download(downloadMetadata);
-                              if (!wasDownloaded) {
-                                logger.silly(`Download skipped! File exists or an error has been handled.`);
-                              }
-                              break;
+                          toBeDownloaded.push(downloadMetadata);
+                        }
+                      }
+                    }
+
+                    for (const folderName in sectionFolders) {
+                      if (sectionFolders.hasOwnProperty(folderName)) {
+                        const folder = sectionFolders[folderName];
+                        for (const resourceName in folder) {
+                          if (folder.hasOwnProperty(resourceName)) {
+                            let suffixedSectionName = `${sectionName}/${folderName}`;
+                            let filename = `${folder[resourceName].prefix}. ${resourceName}`;
+                            let url = folder[resourceName].url;
+                            logger.debug(`      └─ Analisi risorsa in cartella "${folderName}": "${filename}" @ "${url}"...`);
+
+                            const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, suffixedSectionName, filename, url);
+                            if (downloadMetadata) {
+                              toBeDownloaded.push(downloadMetadata);
+                            }
                           }
                         }
+                      }
+                    }
+
+                    for (const downloadMetadata of toBeDownloaded) {
+                      logger.debug(`      └─ ${downloadLogPrefix} risorsa: "${downloadMetadata.filename}" @ "${downloadMetadata.url}"...`);
+                      switch (config.downloader) {
+                        case "aria2":
+                          aria2cInputFileBlocks.push(aria2c(downloadMetadata));
+                          break;
+                        case "internal":
+                        default:
+                          logger.silly(`Download file in: ${downloadMetadata.path}${path.sep}${downloadMetadata.filename}`);
+                          const wasDownloaded = await download(downloadMetadata);
+                          if (!wasDownloaded) {
+                            logger.silly(`Download skipped! File exists or an error has been handled.`);
+                          }
+                          break;
                       }
                     }
                   }
