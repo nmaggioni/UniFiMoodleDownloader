@@ -174,6 +174,8 @@ Config.load()
                       }
                     }
                   }
+
+                  toBeDownloaded.splice(0, toBeDownloaded.length); // Clear in place
                 }
               }
             }
