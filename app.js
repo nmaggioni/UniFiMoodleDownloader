@@ -61,9 +61,6 @@ async function prepareDownload(sessionCookie, course, section, filename, url) {
 
 async function download(downloadMetadata) {
   const downloadedFilePath = path.resolve(downloadMetadata.path, downloadMetadata.filename);
-  if (fse.pathExistsSync(downloadedFilePath)) {
-    return false;
-  }
 
   await request.get({
     url: downloadMetadata.url,
@@ -109,6 +106,16 @@ Config.load()
             const aria2cInputFileBlocks = [];
             const downloadLogPrefix = config.downloader !== "internal" ? "Preparazione download" : "Download";
 
+            function downloadIfMissing(downloadMetadata) {
+              if (downloadMetadata) {
+                if (fse.pathExistsSync(path.join(downloadMetadata.path, downloadMetadata.filename))) {
+                  logger.silly(`        └─ Risorsa ignorata, esiste già`);
+                } else {
+                  toBeDownloaded.push(downloadMetadata);
+                }
+              }
+            }
+
             for (const courseId in r.contents) {
               if (r.contents.hasOwnProperty(courseId)) {
                 logger.info(`${downloadLogPrefix} del corso con ID: ${courseId}...`);
@@ -129,9 +136,7 @@ Config.load()
                         logger.debug(`      └─ Analisi risorsa: "${filename}" @ "${url}"...`);
 
                         const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, sectionName, filename, url);
-                        if (downloadMetadata) {
-                          toBeDownloaded.push(downloadMetadata);
-                        }
+                        downloadIfMissing(downloadMetadata);
                       }
                     }
 
@@ -146,9 +151,7 @@ Config.load()
                             logger.debug(`      └─ Analisi risorsa in cartella "${folderName}": "${filename}" @ "${url}"...`);
 
                             const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, suffixedSectionName, filename, url);
-                            if (downloadMetadata) {
-                              toBeDownloaded.push(downloadMetadata);
-                            }
+                            downloadIfMissing(downloadMetadata);
                           }
                         }
                       }
@@ -165,7 +168,7 @@ Config.load()
                           logger.silly(`Download file in: ${downloadMetadata.path}${path.sep}${downloadMetadata.filename}`);
                           const wasDownloaded = await download(downloadMetadata);
                           if (!wasDownloaded) {
-                            logger.silly(`Download skipped! File exists or an error has been handled.`);
+                            logger.silly(`        └─ Download skipped! An error has occurred.`);
                           }
                           break;
                       }
@@ -179,6 +182,8 @@ Config.load()
               fse.writeFileSync(path.resolve(path.join(__dirname, "aria2c_input.txt")), aria2cInputFileBlocks.join('\n'));
               logger.info("File di input per aria2c scritto in \"aria2c_input.txt\".");
               logger.info("Esempio di comando di download: \"aria2c -x 16 -s 16 -c -i aria2c_input.txt\"");
+            } else {
+              logger.warn("Nessuna nuova risorsa da scaricare.");
             }
           })
           .catch(e => panic(e, false));
