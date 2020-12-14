@@ -5,9 +5,9 @@
 ## Quick start
 
 1. `npm install`
-2. Aggiungi gli ID dei tuoi corsi in [`config.json`](config.json).
-3. _(Opzionale)_ Crea una copia di [`secrets.json`](secrets.json) chiamata `secrets.local.json`.
-4. Imposta le tue credenziali Moodle in `secrets.local.json` (o [`secrets.json`](secrets.json) se hai saltato lo step 3).
+2. Aggiungi gli ID dei tuoi corsi in [`config.yaml`](config.yaml).
+3. _(Opzionale)_ Crea una copia di [`secrets.yaml`](secrets.yaml) chiamata `secrets.local.yaml`.
+4. Imposta le tue credenziali Moodle in `secrets.local.yaml` (o [`secrets.yaml`](secrets.yaml) se hai saltato lo step 3).
 5. `npm start`
 
 I file saranno scaricati ed organizzati nella cartella `downloads`.
@@ -18,7 +18,7 @@ I file caricati come allegati delle sezioni dei corsi vengono scaricati con i pr
 
 ## Downloaders alternativi
 
-In caso di problemi con il downloader integrato (carico eccessivo della piattaforma Moodle, problemi di encoding...) è possibile impostare `config.json["downloader"] = "aria2"`.
+In caso di problemi con il downloader integrato (carico eccessivo della piattaforma Moodle, problemi di encoding...) è possibile impostare `config.yaml["downloader"] = "aria2"`.
 
 In questo modo i file non verranno scaricati direttamente ma verrà invece creato un file `aria2c_input.txt` che potrà essere passato ad [`aria2`](https://aria2.github.io/) per il download parallelo:
 > `aria2c -x 16 -j 16 -c -i ./aria2c_input.txt`

@@ -124,8 +124,8 @@ typings/
 
 # End of https://www.gitignore.io/api/node,jetbrains+all
 
-secrets.local.json
-config.local.json
+secrets.local.yaml
+config.local.yaml
 downloads/
 downloads
 aria2c_input.txt
