@@ -24,7 +24,11 @@ function removeParamsFromUrl(url) {
   return (urlParamIndex !== -1 && url.indexOf('=') > urlParamIndex) ? url.substring(0, urlParamIndex) : url;
 }
 
-async function prepareDownload(sessionCookie, course, section, filename, url) {
+async function prepareDownload(sessionCookie, course, section, filename, url, tryCounter) {
+  if (tryCounter === 3) {
+    return;
+  }
+
   const downloadPath = path.resolve(__dirname, 'downloads', course, section);
   fse.mkdirpSync(downloadPath);
 
@@ -41,7 +45,7 @@ async function prepareDownload(sessionCookie, course, section, filename, url) {
     });
   } catch (err) {
     logger.error("Error in preflight filename extension extraction", err);
-    return;
+    return prepareDownload(sessionCookie, course, section, filename, url, tryCounter !== undefined ? ++tryCounter : 1);
   }
   let uriHref = removeParamsFromUrl(r.request.uri.href);
   let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
