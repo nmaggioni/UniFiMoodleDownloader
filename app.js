@@ -107,6 +107,7 @@ Config.load()
         scrape(secrets, config)
           .then(async (r) => {
             const toBeDownloaded = [];
+            const allPaths = [];
             const aria2cInputFileBlocks = [];
             const downloadLogPrefix = config.downloader !== "internal" ? "Preparazione download" : "Download";
 
@@ -117,6 +118,12 @@ Config.load()
                 } else {
                   toBeDownloaded.push(downloadMetadata);
                 }
+              }
+            }
+
+            function dumpAllPathsIfSet(downloadMetadata) {
+              if (process.env['DUMP_ALL_PATHS']) {
+                allPaths.push(`${downloadMetadata.path}/${downloadMetadata.filename}`);
               }
             }
 
@@ -140,6 +147,7 @@ Config.load()
                         logger.debug(`      └─ Analisi risorsa: "${filename}" @ "${url}"...`);
 
                         const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, sectionName, filename, url);
+                        dumpAllPathsIfSet(downloadMetadata);
                         downloadIfMissing(downloadMetadata);
                       }
                     }
@@ -155,6 +163,7 @@ Config.load()
                             logger.debug(`      └─ Analisi risorsa in cartella "${folderName}": "${filename}" @ "${url}"...`);
 
                             const downloadMetadata = await prepareDownload(r.sessionCookie, courseName, suffixedSectionName, filename, url);
+                            dumpAllPathsIfSet(downloadMetadata);
                             downloadIfMissing(downloadMetadata);
                           }
                         }
@@ -192,6 +201,11 @@ Config.load()
               logger.info("Esempio di comando di download: \"aria2c -x 16 -s 16 -c -i aria2c_input.txt\"");
             } else {
               logger.warn("Nessuna nuova risorsa da scaricare.");
+            }
+
+            if (process.env['DUMP_ALL_PATHS'] && allPaths.length > 0) {
+              logger.warn("Dump di tutti i path attuali in 'paths.txt'");
+              fse.writeFileSync(path.resolve(path.join(__dirname, "paths.txt")), allPaths.join('\n')+'\n');
             }
           })
           .catch(e => panic(e, false));
