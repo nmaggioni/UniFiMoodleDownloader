@@ -22,3 +22,9 @@ In caso di problemi con il downloader integrato (carico eccessivo della piattafo
 
 In questo modo i file non verranno scaricati direttamente ma verrà invece creato un file `aria2c_input.txt` che potrà essere passato ad [`aria2`](https://aria2.github.io/) per il download parallelo:
 > `aria2c -x 16 -j 16 -c -i ./aria2c_input.txt`
+
+## Pulizia dei file estranei
+
+Nel corso del tempo le sezioni interne dei corsi Moodle potrebbero subire delle modifiche o essere riordinate, portando a nuovi scaricamenti di materiale già esistente.
+
+Lo script [`cleanup_paths.sh`](cleanup_paths.sh) è in grado di eliminare localmente i documenti che su Moodle non esistono più o sono stati spostati, ma data l'imprevedibilità di questi cambiamenti **è sconsigliato eseguirlo direttamente**. Per garantire la massima integrità dei dati locali ed evitare la perdita di materiale potenzialmente importante ma non più disponibile online è preferibile eseguire manualmente i comandi contenuti nello script verificando ed adattando l'output di ognuno.
