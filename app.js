@@ -5,18 +5,11 @@ const logger = require('./lib/logging').createConsoleLogger('Main');
 const Secrets = require('./lib/secrets');
 const Config = require('./lib/config');
 const { scrape } = require('./lib/scraper');
+const { sanitizePath } = require('./lib/utils');
 
 function panic(e, exit) {
   logger.error(e);
   if (exit) process.exit(1);
-}
-
-function escapeRegExp(str) {
-  return str.replace(/([.*+?^=!:${}()|\[\]\/\\])/g, "\\$1");
-}
-
-function replaceAll(str, find, replace) {
-  return str.replace(new RegExp(escapeRegExp(find), 'g'), replace);
 }
 
 function removeParamsFromUrl(url) {
@@ -58,7 +51,7 @@ async function prepareDownload(sessionCookie, course, section, filename, url, tr
   return {
     sessionCookie,
     url,
-    filename: replaceAll(filename, path.sep, '_'),
+    filename: sanitizePath(filename),
     path: downloadPath,
   };
 }
@@ -79,10 +72,7 @@ async function download(downloadMetadata) {
       /*
       let uriHref = removeParamsFromUrl(r.request.uri.href);
       let urlExtension = uriHref.substring(uriHref.lastIndexOf('.') + 1);
-      fse.writeFileSync(path.resolve(downloadMetadata.path, replaceAll(
-        `${downloadMetadata.filename}.${urlExtension}`,
-        path.sep, '_'
-      )), r.body);
+      fse.writeFileSync(path.resolve(downloadMetadata.path, `${downloadMetadata.filename}.${urlExtension}`.replaceAll(path.sep, '_'))), r.body);
       */
       fse.writeFileSync(downloadedFilePath, r.body);
     })
